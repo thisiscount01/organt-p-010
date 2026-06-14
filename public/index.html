@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>웨이브 디펜스 — 마법진 드로잉</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#050510;font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;user-select:none}
+#game-wrap{position:relative;width:100%;height:100%}
+#draw-canvas{position:fixed;pointer-events:all;z-index:10;touch-action:none;cursor:crosshair}
+
+/* ── Overlay System ── */
+#overlay{position:fixed;inset:0;pointer-events:none;z-index:20}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:all;transition:opacity .3s,visibility .3s}
+.screen.hidden{opacity:0;pointer-events:none !important;visibility:hidden}
+
+/* ── Lobby ── */
+#lobby-screen{background:rgba(5,5,16,.95)}
+.game-title{font-size:52px;font-weight:900;letter-spacing:4px;color:#fff;text-shadow:0 0 30px #6644ff,0 0 60px #6644ff88;margin-bottom:8px}
+.game-sub{font-size:16px;color:#8899bb;margin-bottom:40px;letter-spacing:2px}
+
+/* Lobby states (init / join-input / waiting / joined) */
+.lobby-panel{display:flex;flex-direction:column;align-items:center;gap:14px;min-width:300px}
+.lobby-panel.hidden{display:none}
+.lobby-btns{display:flex;gap:12px;margin-top:4px}
+.lobby-btn{border:none;border-radius:12px;padding:14px 32px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .12s,box-shadow .15s;letter-spacing:1px}
+.lobby-btn.primary{background:linear-gradient(135deg,#5533ff,#8855ff);color:#fff;box-shadow:0 0 20px #5533ff66}
+.lobby-btn.primary:hover{transform:scale(1.04);box-shadow:0 0 30px #5533ffaa}
+.lobby-btn.secondary{background:#131326;border:1px solid #445;color:#aabbcc}
+.lobby-btn.secondary:hover{background:#1e1e3a;transform:scale(1.02)}
+.lobby-btn:active{transform:scale(.96)}
+
+.join-label{font-size:22px;color:#fff;font-weight:700}
+.code-input{background:#0c0c20;border:2px solid #4455cc;border-radius:10px;padding:12px 20px;color:#fff;font-size:28px;font-weight:900;letter-spacing:8px;text-align:center;width:180px;outline:none;text-transform:uppercase}
+.code-input:focus{border-color:#7766ff;box-shadow:0 0 12px #7766ff55}
+.error-msg{color:#ff4444;font-size:13px;margin-top:4px}
+.error-msg.hidden{display:none}
+
+.wait-code-title{font-size:16px;color:#8899bb;letter-spacing:1px}
+.room-code-big{font-size:52px;font-weight:900;letter-spacing:10px;color:#fff;text-shadow:0 0 20px #5533ff,0 0 40px #5533ff88;font-variant:tabular-nums}
+.copy-code-btn{background:#131326;border:1px solid #445;color:#aabbcc;font-size:13px;font-weight:600;padding:6px 18px;border-radius:8px;cursor:pointer}
+.copy-code-btn:hover{background:#1e1e3a}
+.player-count-line{font-size:14px;color:#667799;margin-top:2px}
+.start-hint{font-size:12px;color:#445566;text-align:center;line-height:1.6;max-width:260px}
+
+.wait-joined-title{font-size:20px;color:#fff;font-weight:700}
+.wait-dots{font-size:24px;color:#5577ff;animation:pulse 1.4s infinite;letter-spacing:4px}
+
+/* ── Countdown ── */
+#countdown-screen{background:rgba(0,0,0,0);pointer-events:none}
+.countdown-num{font-size:180px;font-weight:900;color:#fff;text-shadow:0 0 60px #4466ff,0 0 120px #4466ff66;opacity:0;transition:opacity .1s;animation:cdown .9s forwards}
+@keyframes cdown{0%{opacity:1;transform:scale(1.4)}80%{opacity:.6;transform:scale(0.8)}100%{opacity:0}}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+
+/* ── HUD ── */
+#game-hud{position:absolute;inset:0;pointer-events:none;padding:12px 16px}
+.hud-player{display:flex;flex-direction:column;gap:5px;min-width:220px}
+.hud-row{display:flex;align-items:center;gap:8px}
+.hud-p1{align-items:flex-start}
+.hud-p2{align-items:flex-end;text-align:right}
+.el-tag{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;background:#1a1a2e;border:1px solid #334}
+.el-tag.fire  {background:#cc2200;box-shadow:0 0 12px #ff4400}
+.el-tag.water {background:#0055cc;box-shadow:0 0 12px #0088ff}
+.el-tag.lightning{background:#cc9900;box-shadow:0 0 12px #ffcc00}
+.el-tag.earth {background:#227700;box-shadow:0 0 12px #44cc22}
+.bar-wrap{flex:1;display:flex;flex-direction:column;gap:3px}
+.bar-track{height:10px;background:#1a1a2e;border-radius:5px;overflow:hidden;border:1px solid #223}
+.bar-fill{height:100%;border-radius:5px;transition:width .12s;min-width:2px}
+.hp-fill {background:linear-gradient(90deg,#cc2200,#ff5522)}
+.mp-fill {background:linear-gradient(90deg,#0055aa,#0099ff)}
+.exp-fill{background:linear-gradient(90deg,#aa6600,#ffcc22)}
+.exp-track{height:4px !important}
+.lv-badge{font-size:12px;color:#8899cc;font-weight:700}
+.hud-center{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px}
+.wave-badge{background:#111328;border:1px solid #334466;border-radius:10px;padding:6px 20px;color:#99aaff;font-size:13px;font-weight:700;letter-spacing:2px}
+.score-val{color:#ffcc44;font-size:11px;text-align:center;font-weight:600}
+.skill-dots{display:flex;gap:3px;margin-top:2px}
+.skill-dot{width:8px;height:8px;border-radius:50%;background:#446688;transition:background .3s}
+.hud-bottom{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-between;padding:12px 16px}
+.player-name{font-size:11px;color:#556677;font-weight:700}
+.disc-badge{color:#ff4444;font-size:11px;animation:pulse 1s infinite}
+
+/* ── Guide Panel (bottom-left) ── */
+#guide-panel{position:absolute;bottom:16px;left:16px;pointer-events:all;z-index:5}
+.guide-toggle{background:#111328;border:1px solid #334466;border-radius:8px;color:#99aaff;font-size:12px;font-weight:700;padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .15s}
+.guide-toggle:hover{background:#1a1a38}
+.guide-body{background:rgba(8,8,24,.93);border:1px solid #2a3050;border-radius:10px;padding:10px 14px;margin-bottom:6px;min-width:190px;animation:fadeIn .2s ease}
+.guide-body.hidden{display:none}
+.guide-row{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:12px;color:#99aabb}
+.guide-shape{font-size:16px;min-width:22px;text-align:center}
+.guide-arrow{color:#445566}
+.guide-spell{color:#ccddff;font-weight:600}
+.guide-sep{border:none;border-top:1px solid #1e2540;margin:4px 0}
+.guide-combo{font-size:11px;color:#7788aa;font-style:italic;padding:2px 0}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Advisor ── */
+#advisor-panel{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);min-width:280px;max-width:480px;pointer-events:none;transition:opacity .5s}
+#advisor-panel.hidden{opacity:0}
+.adv-inner{background:rgba(10,10,30,.88);border:1px solid #334;border-radius:12px;padding:10px 18px;display:flex;align-items:center;gap:10px}
+.adv-icon{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px}
+.adv-icon.high{background:#cc2200;box-shadow:0 0 10px #ff0000}
+.adv-icon.med {background:#aa6600;box-shadow:0 0 10px #ffaa00}
+.adv-icon.low {background:#004488;box-shadow:0 0 10px #0088ff}
+.adv-msg{color:#ccddee;font-size:14px;font-weight:600}
+.adv-conf{font-size:11px;color:#445566;margin-left:auto;padding-left:8px}
+
+/* ── Augment Screen ── */
+#augment-screen{background:rgba(2,2,14,.88);z-index:22}
+.aug-title{font-size:14px;color:#8899bb;letter-spacing:2px;margin-bottom:6px}
+.aug-level{font-size:32px;font-weight:900;color:#fff;text-shadow:0 0 20px #8866ff;margin-bottom:28px}
+.aug-cards{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;max-width:680px}
+.aug-card{width:190px;border-radius:16px;padding:22px 16px 20px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;transition:transform .15s,box-shadow .15s;position:relative;border:2px solid transparent}
+.aug-card:hover{transform:translateY(-6px) scale(1.03);box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.aug-card:active{transform:scale(.97)}
+.aug-card.kind-element{background:linear-gradient(145deg,#1a0a28,#2a1040)}
+.aug-card.kind-element:hover{border-color:#9966ff;box-shadow:0 8px 32px #9966ff44}
+.aug-card.kind-stat{background:linear-gradient(145deg,#0a1428,#102040)}
+.aug-card.kind-stat:hover{border-color:#4488ff;box-shadow:0 8px 32px #4488ff44}
+.aug-card.kind-passive{background:linear-gradient(145deg,#1c1400,#302000)}
+.aug-card.kind-passive:hover{border-color:#ffaa22;box-shadow:0 8px 32px #ffaa2244}
+.aug-card-icon{font-size:34px;line-height:1}
+.aug-card-label{font-size:15px;font-weight:800;color:#fff;text-align:center;letter-spacing:.5px}
+.aug-card-desc{font-size:11px;color:#99aabb;text-align:center;line-height:1.5}
+.aug-card-badge{position:absolute;top:10px;right:10px;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;letter-spacing:.5px}
+.kind-element .aug-card-badge{background:#9966ff33;color:#cc99ff}
+.kind-stat     .aug-card-badge{background:#4488ff33;color:#88bbff}
+.kind-passive  .aug-card-badge{background:#ffaa2233;color:#ffcc66}
+
+/* ── Game Over ── */
+#gameover-screen{background:rgba(5,2,10,.93)}
+.over-title{font-size:60px;font-weight:900;color:#cc2200;text-shadow:0 0 40px #ff0000;margin-bottom:24px}
+.over-stats{display:flex;gap:40px;margin-bottom:40px}
+.over-stat{text-align:center}
+.over-stat .val{font-size:42px;font-weight:900;color:#fff}
+.over-stat .lbl{font-size:13px;color:#667788;margin-top:4px}
+.restart-btn{background:#222244;border:1px solid #6644ff;color:#aabbff;font-size:16px;font-weight:700;padding:14px 40px;border-radius:12px;cursor:pointer;transition:background .2s}
+.restart-btn:hover{background:#334466}
+
+/* ── Float Text ── */
+@keyframes floatUp{
+  0%{opacity:1;transform:translateX(-50%) translateY(0)}
+  80%{opacity:.8}
+  100%{opacity:0;transform:translateX(-50%) translateY(-60px)}
+}
+.float-text{position:fixed;pointer-events:none;z-index:55;font-weight:800;font-size:18px;white-space:nowrap;animation:floatUp .85s ease-out forwards;transform-origin:center bottom}
+
+/* ── Room List Panel ── */
+.rooms-list{display:flex;flex-direction:column;gap:8px;width:100%;max-height:260px;overflow-y:auto;padding-right:4px;margin:4px 0 8px}
+.rooms-list::-webkit-scrollbar{width:4px}
+.rooms-list::-webkit-scrollbar-track{background:#080818}
+.rooms-list::-webkit-scrollbar-thumb{background:#334;border-radius:2px}
+.room-card{background:#0e0e28;border:1px solid #2a3050;border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;transition:border-color .15s,background .15s}
+.room-card:hover{background:#161630;border-color:#5544aa}
+.room-card-code{font-size:20px;font-weight:900;color:#fff;letter-spacing:4px}
+.room-card-meta{font-size:12px;color:#667799;margin-top:2px}
+.room-join-btn{background:linear-gradient(135deg,#4433dd,#7755ff);border:none;border-radius:8px;padding:8px 18px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:transform .12s,box-shadow .12s;flex-shrink:0;letter-spacing:.5px}
+.room-join-btn:hover{transform:scale(1.05);box-shadow:0 0 14px #7755ff66}
+.room-join-btn:active{transform:scale(.95)}
+.rooms-empty{color:#667799;font-size:13px;text-align:center;padding:28px 0}
+.rooms-header-row{display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:6px}
+.rooms-count{font-size:12px;color:#445566}
+.rooms-refresh-btn{background:#111328;border:1px solid #445;color:#8899bb;font-size:12px;padding:4px 12px;border-radius:8px;cursor:pointer;transition:background .15s}
+.rooms-refresh-btn:hover{background:#1a1a38}
+
+/* ── Wave Prep Countdown ── */
+#wave-prep-overlay{position:fixed;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;z-index:19;opacity:0;visibility:hidden;transition:opacity .4s,visibility .4s}
+#wave-prep-overlay.visible{opacity:1;visibility:visible}
+.wave-prep-box{background:rgba(6,6,20,.92);border:1px solid #2a3060;border-radius:16px;padding:20px 52px;text-align:center;box-shadow:0 0 40px rgba(80,60,255,.25);min-width:260px}
+.wave-prep-label{font-size:12px;color:#8899bb;letter-spacing:2px;margin-bottom:6px;text-transform:uppercase}
+.wave-prep-timer{font-size:60px;font-weight:900;color:#fff;text-shadow:0 0 24px #5544ff,0 0 48px #5544ff55;font-variant:tabular-nums;line-height:1}
+.wave-prep-next{font-size:12px;color:#6677aa;margin-top:8px;letter-spacing:1px}
+.wave-prep-event{font-size:13px;font-weight:700;color:#ffaa44;margin-top:6px;letter-spacing:1px;display:none}
+.wave-prep-event.visible{display:block}
+/* next_enemies 예고 영역 */
+#wave-prep-enemies{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px;min-height:0}
+#wave-prep-enemies:empty{display:none}
+.enemy-pill{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.06);border:1px solid #334466;border-radius:20px;padding:3px 10px;font-size:11px;color:#aabbcc;font-weight:600}
+.enemy-pill .ep-elem{font-size:13px;line-height:1}
+.enemy-pill .ep-count{color:#ffcc66;font-weight:800}
+/* fire */
+.enemy-pill.el-fire  {border-color:#cc4400;background:rgba(204,68,0,.18)}
+/* water */
+.enemy-pill.el-water {border-color:#0066cc;background:rgba(0,102,204,.18)}
+/* lightning */
+.enemy-pill.el-lightning{border-color:#ccaa00;background:rgba(204,170,0,.18)}
+/* earth */
+.enemy-pill.el-earth {border-color:#226600;background:rgba(34,102,0,.18)}
+
+/* ── WASD 힌트 오버레이 (게임 시작 후 3초) ── */
+#wasd-hint{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);pointer-events:none;z-index:30;opacity:0;visibility:hidden;transition:opacity .5s,visibility .5s}
+#wasd-hint.visible{opacity:1;visibility:visible}
+.wasd-box{background:rgba(4,4,16,.88);border:1px solid #3344aa;border-radius:14px;padding:14px 28px;text-align:center;box-shadow:0 0 24px rgba(60,80,255,.3)}
+.wasd-title{font-size:11px;color:#8899bb;letter-spacing:2px;margin-bottom:8px;text-transform:uppercase}
+.wasd-keys{display:flex;flex-direction:column;align-items:center;gap:4px}
+.wasd-row{display:flex;gap:4px;justify-content:center}
+.wasd-key{width:34px;height:34px;background:#1a1a36;border:1.5px solid #4455bb;border-radius:7px;border-bottom:3px solid #334;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#ccdcff;box-shadow:0 2px 4px rgba(0,0,0,.5)}
+.wasd-hint-sub{font-size:10px;color:#6677aa;margin-top:6px;letter-spacing:1px}
+
+/* ── 피격 방향 플래시 ── */
+#hit-flash{position:fixed;inset:0;pointer-events:none;z-index:25;opacity:0;transition:opacity .08s}
+#hit-flash.flash-top   {background:radial-gradient(ellipse 60% 30% at 50% 0%,   rgba(255,40,40,.65) 0%, transparent 100%)}
+#hit-flash.flash-bottom{background:radial-gradient(ellipse 60% 30% at 50% 100%, rgba(255,40,40,.65) 0%, transparent 100%)}
+#hit-flash.flash-left  {background:radial-gradient(ellipse 30% 60% at 0%   50%, rgba(255,40,40,.65) 0%, transparent 100%)}
+#hit-flash.flash-right {background:radial-gradient(ellipse 30% 60% at 100% 50%, rgba(255,40,40,.65) 0%, transparent 100%)}
+#hit-flash.active{opacity:1}
+
+/* ── 도형 인식 오버레이 (Goal 1) ── */
+#spell-overlay{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);pointer-events:none;z-index:50;text-align:center;min-width:220px}
+#spell-overlay-recognizing{color:#d0e8ff;font-size:16px;font-weight:700;display:none;padding:6px 18px;background:rgba(20,30,60,.75);border:1px solid #334;border-radius:20px;letter-spacing:2px;animation:recogPulse .7s infinite alternate}
+#spell-overlay-name{font-size:52px;font-weight:900;display:none;letter-spacing:4px;line-height:1.1;text-shadow:0 0 30px currentColor,0 0 60px currentColor}
+@keyframes recogPulse{from{opacity:.55}to{opacity:1}}
+@keyframes spellNamePop{from{transform:scale(.65);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ── 보스 파동 비네팅 (Goal 3) ── */
+#boss-wave-vignette{position:fixed;inset:0;pointer-events:none;z-index:7;display:none;background:radial-gradient(ellipse at center,transparent 25%,rgba(80,0,0,.4) 100%);animation:bossVig 2.4s ease-in-out infinite}
+@keyframes bossVig{0%,100%{opacity:.65}50%{opacity:1}}
+
+/* ── 게임 오버 보완 (Goal 8) ── */
+.over-stats{display:flex;gap:28px;margin-bottom:32px;flex-wrap:wrap;justify-content:center}
+.over-stat .val{font-size:38px;font-weight:900;color:#fff}
+.over-stat .lbl{font-size:12px;color:#667788;margin-top:4px;letter-spacing:1px}
+.over-kills .val{color:#ffcc44}
+.over-combo .val{color:#ff88cc}
+
+/* ── 리더보드 (Goal 8) ── */
+#leaderboard-section{margin-top:24px;width:100%;max-width:520px}
+.lb-title{font-size:13px;color:#8899bb;letter-spacing:2px;margin-bottom:10px;text-transform:uppercase}
+#leaderboard-list{display:flex;flex-direction:column;gap:5px}
+.lb-row{display:flex;align-items:center;gap:0;background:rgba(255,255,255,.04);border:1px solid #223344;border-radius:8px;padding:7px 14px;font-size:13px;color:#aabbcc}
+.lb-rank{width:32px;font-size:15px;flex-shrink:0}
+.lb-wave{flex:1;font-weight:700;color:#fff}
+.lb-kills{width:60px;text-align:right;color:#ffcc44}
+.lb-combo{width:72px;text-align:right;color:#ff88cc}
+
+/* ── 닉네임 입력 ── */
+.nick-label{font-size:11px;color:#8899bb;letter-spacing:1px;margin-bottom:2px}
+.nick-input{background:#0c0c20;border:2px solid #4455cc;border-radius:10px;padding:8px 14px;color:#fff;font-size:16px;font-weight:700;text-align:center;width:220px;outline:none;letter-spacing:1px}
+.nick-input:focus{border-color:#7766ff;box-shadow:0 0 12px #7766ff55}
+.nick-input::placeholder{color:#334466;font-weight:400}
+
+/* ── 일시정지 오버레이 ── */
+#pause-overlay{position:fixed;inset:0;background:rgba(5,5,16,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:all;z-index:30;opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
+#pause-overlay.visible{opacity:1;visibility:visible}
+.pause-title{font-size:68px;font-weight:900;color:#fff;text-shadow:0 0 40px #6644ff,0 0 80px #6644ff55;letter-spacing:6px;margin-bottom:14px}
+.pause-sub{font-size:15px;color:#8899bb;letter-spacing:2px}
+</style>
+</head>
+<body>
+<div id="game-wrap"></div>
+
+<div id="overlay">
+  <!-- ── Lobby ── -->
+  <div id="lobby-screen" class="screen">
+    <div class="game-title">⚔️ 웨이브 디펜스</div>
+    <div class="game-sub">마법진 드로잉 로그라이크</div>
+
+    <!-- init: create / join / rooms -->
+    <div id="lobby-init" class="lobby-panel">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:8px">
+        <div class="nick-label">닉네임 (선택)</div>
+        <input id="nickname-input" class="nick-input" maxlength="12" placeholder="내 닉네임" autocomplete="off" />
+      </div>
+      <div class="lobby-btns">
+        <button class="lobby-btn primary" id="btn-create">방 만들기</button>
+        <button class="lobby-btn secondary" id="btn-join-show">코드로 입장</button>
+      </div>
+      <button class="lobby-btn secondary" id="btn-rooms-show" style="width:100%;max-width:284px">📋 방 목록 보기</button>
+      <div id="lobby-connect-status" style="font-size:13px;color:#445566">서버 연결 중…</div>
+    </div>
+
+    <!-- join: code input -->
+    <div id="lobby-join" class="lobby-panel hidden">
+      <div class="join-label">방 코드 입력</div>
+      <input id="room-code-input" class="code-input" maxlength="4" placeholder="ABCD" autocomplete="off" />
+      <div class="lobby-btns">
+        <button class="lobby-btn primary" id="btn-join-confirm">입장</button>
+        <button class="lobby-btn secondary" id="btn-join-cancel">취소</button>
+      </div>
+      <div id="join-error" class="error-msg hidden"></div>
+    </div>
+
+    <!-- waiting: host, show room code -->
+    <div id="lobby-waiting" class="lobby-panel hidden">
+      <div class="wait-code-title">방 코드</div>
+      <div class="room-code-big" id="room-code-display">----</div>
+      <button class="copy-code-btn" id="btn-copy-code">복사</button>
+      <div class="player-count-line" id="player-count-line">대기 중… (1 / 2명)</div>
+      <div class="lobby-btns" style="margin-top:8px">
+        <button class="lobby-btn primary" id="btn-start">▶ 게임 시작</button>
+      </div>
+      <div class="start-hint">1인 솔로도 바로 시작 가능.<br>파트너 없이 진행하려면 위 버튼을 누르세요.</div>
+    </div>
+
+    <!-- joined: guest waiting -->
+    <div id="lobby-joined" class="lobby-panel hidden">
+      <div class="wait-joined-title">입장 완료!</div>
+      <div style="font-size:13px;color:#8899bb;margin-top:4px">호스트가 게임을 시작하면 자동으로 진행됩니다</div>
+      <div class="wait-dots" style="margin-top:16px">• • •</div>
+    </div>
+
+    <!-- rooms: browse and join existing rooms -->
+    <div id="lobby-rooms" class="lobby-panel hidden">
+      <div class="join-label">참여 가능한 방</div>
+      <div class="rooms-header-row">
+        <span class="rooms-count" id="rooms-count">로딩 중…</span>
+        <button class="rooms-refresh-btn" id="btn-rooms-refresh">↻ 새로고침</button>
+      </div>
+      <div class="rooms-list" id="rooms-list"><div class="rooms-empty">로딩 중…</div></div>
+      <div class="lobby-btns" style="margin-top:4px">
+        <button class="lobby-btn secondary" id="btn-rooms-back">← 돌아가기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Countdown ── -->
+  <div id="countdown-screen" class="screen hidden"></div>
+
+  <!-- ── HUD (visible during gameplay) ── -->
+  <div id="game-hud" class="screen hidden">
+    <div class="hud-row" style="justify-content:space-between;align-items:flex-start">
+      <!-- P1 -->
+      <div class="hud-player hud-p1" id="hud-p1">
+        <div class="hud-row">
+          <div class="el-tag" id="p1-eltag">?</div>
+          <div class="bar-wrap">
+            <div class="bar-track"><div class="bar-fill hp-fill" id="p1-hp" style="width:100%"></div></div>
+            <div class="bar-track"><div class="bar-fill mp-fill" id="p1-mp" style="width:100%"></div></div>
+            <div class="bar-track exp-track"><div class="bar-fill exp-fill" id="p1-exp" style="width:0%;transition:width .12s"></div></div>
+          </div>
+        </div>
+        <div class="hud-row" style="gap:6px;margin-top:2px">
+          <span class="lv-badge" id="p1-lv">Lv.1</span>
+          <div class="skill-dots" id="p1-skills"></div>
+          <span class="disc-badge hidden" id="p1-disc">● 재연결 중</span>
+        </div>
+      </div>
+
+      <!-- Center -->
+      <div class="hud-center">
+        <div class="wave-badge" id="wave-badge">WAVE 1</div>
+        <div class="score-val" id="score-val">0 pts</div>
+      </div>
+
+      <!-- P2 -->
+      <div class="hud-player hud-p2" id="hud-p2">
+        <div class="hud-row" style="justify-content:flex-end">
+          <div class="bar-wrap">
+            <div class="bar-track"><div class="bar-fill hp-fill" id="p2-hp" style="width:100%"></div></div>
+            <div class="bar-track"><div class="bar-fill mp-fill" id="p2-mp" style="width:100%"></div></div>
+            <div class="bar-track exp-track"><div class="bar-fill exp-fill" id="p2-exp" style="width:0%;transition:width .12s"></div></div>
+          </div>
+          <div class="el-tag" id="p2-eltag">?</div>
+        </div>
+        <div class="hud-row" style="justify-content:flex-end;gap:6px;margin-top:2px">
+          <span class="disc-badge hidden" id="p2-disc">● 재연결 중</span>
+          <div class="skill-dots" id="p2-skills"></div>
+          <span class="lv-badge" id="p2-lv">Lv.1</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Drawing Guide Panel (bottom-left) ── -->
+    <div id="guide-panel">
+      <div class="guide-body" id="guide-body">
+        <div class="guide-row"><span class="guide-shape">○</span><span class="guide-arrow">→</span><span class="guide-spell">마법 탄</span><span style="font-size:10px;color:#556677;margin-left:auto">bolt</span></div>
+        <div class="guide-row"><span class="guide-shape">△</span><span class="guide-arrow">→</span><span class="guide-spell">관통 창</span><span style="font-size:10px;color:#556677;margin-left:auto">pierce</span></div>
+        <div class="guide-row"><span class="guide-shape">□</span><span class="guide-arrow">→</span><span class="guide-spell">원소 충격파</span><span style="font-size:10px;color:#556677;margin-left:auto">AoE</span></div>
+        <div class="guide-row"><span class="guide-shape">〜</span><span class="guide-arrow">→</span><span class="guide-spell">연쇄 번개</span><span style="font-size:10px;color:#556677;margin-left:auto">chain</span></div>
+        <div class="guide-row"><span class="guide-shape">★</span><span class="guide-arrow">→</span><span class="guide-spell">원소 폭발</span><span style="font-size:10px;color:#556677;margin-left:auto">nova</span></div>
+        <hr class="guide-sep">
+        <div class="guide-combo">두 도형 1.8초 내 연속 → 복합 마법 ✨</div>
+        <div class="guide-combo" style="color:#556677;margin-top:2px">우클릭 / WASD = 이동</div>
+      </div>
+      <button class="guide-toggle" id="guide-toggle">
+        <span id="guide-arrow-icon">▼</span> 드로잉 가이드
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Advisor ── -->
+  <div id="advisor-panel" class="hidden">
+    <div class="adv-inner">
+      <div class="adv-icon high" id="adv-icon">⚠</div>
+      <span class="adv-msg" id="adv-msg">…</span>
+      <span class="adv-conf" id="adv-conf"></span>
+    </div>
+  </div>
+
+  <!-- ── Augment Screen (shown on top of game-hud) ── -->
+  <div id="augment-screen" class="screen hidden">
+    <div class="aug-title">레벨 업!</div>
+    <div class="aug-level" id="aug-level-display">Lv. 2 달성</div>
+    <div class="aug-cards" id="aug-cards"></div>
+  </div>
+
+  <!-- ── Game Over ── -->
+  <div id="gameover-screen" class="screen hidden">
+    <div class="over-title">GAME OVER</div>
+    <div id="over-nickname" style="font-size:18px;color:#aabbcc;font-weight:700;margin-bottom:14px;letter-spacing:2px"></div>
+    <div class="over-stats">
+      <div class="over-stat"><div class="val" id="over-wave">1</div><div class="lbl">WAVE</div></div>
+      <div class="over-stat"><div class="val" id="over-score">0</div><div class="lbl">SCORE</div></div>
+      <div class="over-stat over-kills"><div class="val" id="over-kills">0</div><div class="lbl">KILLS</div></div>
+      <div class="over-stat over-combo"><div class="val" id="over-combo">0</div><div class="lbl">MAX COMBO</div></div>
+    </div>
+    <button class="restart-btn" id="btn-restart-game">🔄 다시 시작</button>
+    <div id="leaderboard-section" style="display:none">
+      <div class="lb-title">🏆 리더보드</div>
+      <div id="leaderboard-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Wave Prep Countdown Overlay (z-index:19, shown during wave_prep phase) ── -->
+<div id="wave-prep-overlay">
+  <div class="wave-prep-box">
+    <div class="wave-prep-label">다음 웨이브까지</div>
+    <div class="wave-prep-timer" id="wave-prep-timer">5</div>
+    <div class="wave-prep-next" id="wave-prep-next"></div>
+    <div class="wave-prep-event" id="wave-prep-event"></div>
+    <div id="wave-prep-enemies"></div>
+  </div>
+</div>
+
+<!-- ── WASD 힌트 오버레이 (게임 시작 후 3초 표시) ── -->
+<div id="wasd-hint">
+  <div class="wasd-box">
+    <div class="wasd-title">이동 조작</div>
+    <div class="wasd-keys">
+      <div class="wasd-row"><div class="wasd-key">W</div></div>
+      <div class="wasd-row">
+        <div class="wasd-key">A</div>
+        <div class="wasd-key">S</div>
+        <div class="wasd-key">D</div>
+      </div>
+    </div>
+    <div class="wasd-hint-sub">또는 우클릭으로 이동</div>
+  </div>
+</div>
+
+<!-- ── 피격 방향 플래시 ── -->
+<div id="hit-flash"></div>
+
+<!-- ── 도형 인식 오버레이 (Goal 1) ── -->
+<div id="spell-overlay">
+  <div id="spell-overlay-recognizing">✦ 인식 중...</div>
+  <div id="spell-overlay-name"></div>
+</div>
+
+<!-- ── 보스 파동 비네팅 (Goal 3) ── -->
+<div id="boss-wave-vignette"></div>
+
+<!-- ── 일시정지 오버레이 ── -->
+<div id="pause-overlay">
+  <div class="pause-title">⏸ 일시정지</div>
+  <div class="pause-sub">ESC 키를 눌러 재개</div>
+  <div class="pause-sub" style="margin-top:14px;font-size:12px;color:#445566">⚠ 서버 게임은 계속 진행 중입니다</div>
+</div>
+
+<script src="/pixi.min.js"></script>
+<script src="/game.js"></script>
+</body>
+</html>

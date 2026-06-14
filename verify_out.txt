@@ -1,0 +1,69 @@
+=== Wave Defense 5개 Goal 실행 검증 ===
+
+─── Goal ②: room_joined 페이로드 검증 ───
+   [host room_created roomCode] 6U9G
+   [tutorial_required] true
+   [availableElements] ["fire","water","lightning","earth"]
+   [playerCount] 2
+✅ [②-tutorial] tutorial_required: true 수신됨
+✅ [②-elements] availableElements: [fire,water,lightning,earth]
+
+─── Goal ①③: 솔로 세션 실행 (스펠 캐스팅 → wave_prep) ───
+   [solo room] 2PRB
+   [wave_start] waveNumber=1
+✅ [wave_start] Wave 1 시작 확인
+   [총 스펠 발동 횟수] 45
+   [적 스폰 수] 4
+   [hit 수신 수] 21
+   [solo_combo_hit 수신 수] 4
+   [wave_prep nextWave] 2
+   [wave_prep countdown] 5
+   [wave_prep next_enemies] [{"type":"basic","count":3,"element":null},{"type":"fast","count":2,"element":null}]
+✅ [③-next_enemies] next_enemies 수신: 2개 항목 — basic×3(el:null), fast×2(el:null)
+✅ [③-countdown] countdown=5s
+✅ [①-hit] solo_combo_hit WS 수신: targetId=e22, damage=27, attackerId=p4
+
+─── Goal ①-엣지: 2인 세션 solo_combo 미발동 + comboWindowMs 외부화 ───
+✅ [①-edge2p] 2인 이상 solo_combo 차단 조건(===1) 확인
+✅ [①-balance] comboWindowMs B.game 참조 — balance.json 외부화됨
+✅ [①-timeout] 1500ms 초과 미발동 조건(<=comboWindowMs) 확인
+
+─── Goal ④: hit-flash DOM/CSS/JS 검증 ───
+   [#hit-flash div 존재] ✓
+   [.flash-top CSS] ✓
+   [.flash-bottom CSS] ✓
+   [.flash-left CSS] ✓
+   [.flash-right CSS] ✓
+   [#hit-flash.active 트리거] ✓
+   [showHitFlash() 함수] ✓
+   [hitDirection() 함수] ✓
+   [showHitFlash 호출(게임루프)] ✓
+✅ [④] #hit-flash 4방향 CSS + showHitFlash() + hitDirection() + 호출부 모두 존재
+
+─── Goal ⑤: WASD 힌트 오버레이 DOM/JS 검증 ───
+   [#wasd-hint div 존재] ✓
+   [.wasd-key W 키] ✓
+   [.wasd-key A/S/D 키] ✓
+   [3초 타이머(3000ms)] ✓
+   [showWasdHint() 함수] ✓
+   [wave 1 showWasdHint() 호출] ✓
+   [visible 클래스 토글] ✓
+   [힌트 opacity transition CSS] ✓
+✅ [⑤] #wasd-hint 오버레이 + 3초 타이머 + wave 1 자동 호출 모두 존재
+
+════════════════════════════════════════
+검증 결과 요약
+════════════════════════════════════════
+✅ [②-tutorial] tutorial_required: true 수신됨
+✅ [②-elements] availableElements: [fire,water,lightning,earth]
+✅ [wave_start] Wave 1 시작 확인
+✅ [③-next_enemies] next_enemies 수신: 2개 항목 — basic×3(el:null), fast×2(el:null)
+✅ [③-countdown] countdown=5s
+✅ [①-hit] solo_combo_hit WS 수신: targetId=e22, damage=27, attackerId=p4
+✅ [①-edge2p] 2인 이상 solo_combo 차단 조건(===1) 확인
+✅ [①-balance] comboWindowMs B.game 참조 — balance.json 외부화됨
+✅ [①-timeout] 1500ms 초과 미발동 조건(<=comboWindowMs) 확인
+✅ [④] #hit-flash 4방향 CSS + showHitFlash() + hitDirection() + 호출부 모두 존재
+✅ [⑤] #wasd-hint 오버레이 + 3초 타이머 + wave 1 자동 호출 모두 존재
+────────────────────────────────────────
+최종: 전체 PASS ✅

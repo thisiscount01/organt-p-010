@@ -1,0 +1,238 @@
+{
+  "_comment": "All game balance values. Edit here — no redeploy needed. (source: game design + playtesting assumptions)",
+  "game": {
+    "tickMs": 50,
+    "arenaWidth": 1200,
+    "arenaHeight": 700,
+    "maxPlayers": 4,
+    "roomMaxPlayers": 4,
+    "minPlayersToStart": 1,
+    "waveClearDelayMs": 3000,
+    "wavePrepDelayMs": 5000,
+    "bossWaveInterval": 5,
+    "advisorUpdateMs": 3000,
+    "reconnectTimeoutMs": 30000,
+    "compositeWindowMs": 1800,
+    "playerScalePerExtra": 0.45,
+    "waveCountScalePerExtra": 0.35,
+    "reviveHpPercent": 0.3,
+    "_reviveNote": "wave_clear 시 사망 플레이어 maxHp * 0.3 부활 (assumption: 30% feels fair)",
+    "attackWindupTicks": 4,
+    "_windupNote": "근접 적 공격 4틱(200ms) 전 windup 애니메이션 신호 (50ms tick × 4 = 200ms)",
+    "comboWindowMs": 1500,
+    "_comboWindowNote": "co_combo_hit 감지 윈도우(ms) — COMBO_WINDOW_MS 외부화. 핫리로드 반영",
+    "comboDamageMult": 1.35,
+    "_comboDamageMultNote": "협동 콤보 기본 데미지 배율 — 핫리로드 반영",
+    "coComboSurge": {
+      "_note": "elem1+elem2 속성 조합 → co_combo_hit elemental_surge 추가 배율 (comboDamageMult 위에 추가 곱산). 핫리로드 반영",
+      "fire+water":      1.5,
+      "water+fire":      1.5,
+      "lightning+earth": 1.5,
+      "earth+lightning": 1.5,
+      "fire+lightning":  1.3,
+      "lightning+fire":  1.3,
+      "water+earth":     1.3,
+      "earth+water":     1.3,
+      "fire+earth":      1.2,
+      "earth+fire":      1.2,
+      "water+lightning": 1.2,
+      "lightning+water": 1.2
+    }
+  },
+  "elements": ["fire","water","lightning","earth"],
+  "_affinityNote": "attacker[element][defenderElement] = damage multiplier",
+  "elementAffinity": {
+    "fire":      { "fire":1.0, "water":0.7, "lightning":1.0, "earth":1.5 },
+    "water":     { "fire":1.5, "water":1.0, "lightning":0.7, "earth":1.0 },
+    "lightning": { "fire":1.0, "water":1.5, "lightning":1.0, "earth":0.7 },
+    "earth":     { "fire":0.7, "water":1.0, "lightning":1.5, "earth":1.0 }
+  },
+  "player": {
+    "baseHp": 120,
+    "baseMana": 100,
+    "manaRegenPerTick": 0.35,
+    "speedPerTick": 9,
+    "baseSpellDamage": 28,
+    "spellManaCost": 30,
+    "spellCooldownTicks": 10,
+    "spellSpeed": 18,
+    "spellLifetimeTicks": 70,
+    "spellRadius": 10,
+    "playerRadius": 18,
+    "invincibleTicksOnHit": 12,
+    "expToLevelBase": 80,
+    "expToLevelMultiplier": 1.6,
+    "initialShapes": ["circle", "triangle", "star"],
+    "_initialShapesNote": "게임 시작 시 기본 해금 도형. square/zigzag는 augment로 해금"
+  },
+  "_shapeNote": "도형 인식 → 주문 타입 매핑. type: bolt|pierce|pulse|chain|nova",
+  "shapeSpells": {
+    "circle":   { "type":"bolt",   "label":"마법 탄",    "damageMult":1.0, "count":1, "piercing":false, "aoe":false },
+    "triangle": { "type":"pierce", "label":"관통 창",    "damageMult":1.4, "count":1, "piercing":true,  "aoe":false },
+    "square":   { "type":"pulse",  "label":"원소 충격파","damageMult":0.7, "count":1, "piercing":false, "aoe":true, "aoeRadius":130 },
+    "zigzag":   { "type":"chain",  "label":"연쇄 번개",  "damageMult":0.8, "count":1, "piercing":false, "chainCount":3 },
+    "star":     { "type":"nova",   "label":"원소 폭발",  "damageMult":0.55,"count":8, "piercing":false, "aoe":false }
+  },
+  "_compositeNote": "두 도형을 compositeWindowMs 내 연속 → 복합 마법",
+  "compositeSpells": {
+    "circle+circle":   { "type":"bolt",   "label":"집속 볼트",  "damageMult":2.2, "count":3, "piercing":false },
+    "circle+triangle": { "type":"pierce", "label":"화염 창",    "damageMult":2.0, "count":2, "piercing":true  },
+    "circle+star":     { "type":"nova",   "label":"마법 폭발",  "damageMult":0.9, "count":12,"piercing":false },
+    "triangle+circle": { "type":"pierce", "label":"화염 창",    "damageMult":2.0, "count":2, "piercing":true  },
+    "triangle+zigzag": { "type":"chain",  "label":"번개 관통",  "damageMult":1.3, "count":1, "piercing":true, "chainCount":5 },
+    "triangle+star":   { "type":"nova",   "label":"관통 폭발",  "damageMult":0.8, "count":8, "piercing":true  },
+    "square+circle":   { "type":"pulse",  "label":"강화 충격파","damageMult":1.2, "count":1, "aoe":true, "aoeRadius":180 },
+    "square+zigzag":   { "type":"chain",  "label":"뇌격 방벽",  "damageMult":1.0, "count":1, "chainCount":6, "aoe":true, "aoeRadius":150 },
+    "square+star":     { "type":"nova",   "label":"원소 대폭발","damageMult":1.0, "count":16,"aoe":true, "aoeRadius":120 },
+    "zigzag+circle":   { "type":"chain",  "label":"번개 폭풍",  "damageMult":1.1, "count":1, "chainCount":5  },
+    "zigzag+triangle": { "type":"chain",  "label":"번개 관통",  "damageMult":1.3, "count":1, "piercing":true, "chainCount":5 },
+    "zigzag+star":     { "type":"nova",   "label":"폭풍 폭발",  "damageMult":0.7, "count":10,"chainCount":2  },
+    "star+circle":     { "type":"nova",   "label":"마법 폭발",  "damageMult":0.9, "count":12,"piercing":false },
+    "star+square":     { "type":"nova",   "label":"원소 대폭발","damageMult":1.0, "count":16,"aoe":true, "aoeRadius":120 },
+    "star+zigzag":     { "type":"nova",   "label":"폭풍 폭발",  "damageMult":0.7, "count":10,"chainCount":2  }
+  },
+  "_augmentNote": "레벨업 시 서버가 3개 옵션 생성. 웨이브 중 큐잉 → wave_clear 후 순차 표시",
+  "augmentPool": {
+    "elements": {
+      "fire":      { "label":"🔥 불꽃 각성",  "desc":"불 속성 해금 + 데미지 +15%",   "damageMultiplier":1.15 },
+      "water":     { "label":"💧 물 각성",    "desc":"물 속성 해금 + 마나재생 +25%", "manaRegenMultiplier":1.25 },
+      "lightning": { "label":"⚡ 번개 각성",  "desc":"번개 속성 해금 + 쿨다운 -20%","cooldownMultiplier":0.8 },
+      "earth":     { "label":"🌿 대지 각성",  "desc":"대지 속성 해금 + 체력 +30",    "maxHpBonus":30 }
+    },
+    "_shapesNote": "초기 미해금 도형(square/zigzag) 해금 증강. 해금 후 augment 목록에서 제거",
+    "shapes": {
+      "square": { "label":"🔲 충격파 해금", "desc":"사각형 진 해금 → 원소 충격파 시전 가능", "unlocksShape":"square" },
+      "zigzag": { "label":"⚡ 번개 진 해금","desc":"지그재그 진 해금 → 연쇄 번개 시전 가능",  "unlocksShape":"zigzag" }
+    },
+    "stats": [
+      { "id":"dmg1",   "label":"⚔ 마력 집중",  "desc":"주문 데미지 +30%",  "damageMultiplier":1.3 },
+      { "id":"dmg2",   "label":"⚔ 파괴 마법",  "desc":"주문 데미지 +50%",  "damageMultiplier":1.5 },
+      { "id":"regen1", "label":"◈ 마나 흐름",  "desc":"마나 재생 +60%",    "manaRegenMultiplier":1.6 },
+      { "id":"regen2", "label":"◈ 명상",       "desc":"마나 재생 +120%",   "manaRegenMultiplier":2.2 },
+      { "id":"cd1",    "label":"↯ 연속 시전",  "desc":"쿨다운 -25%",       "cooldownMultiplier":0.75 },
+      { "id":"cd2",    "label":"↯ 속사",       "desc":"쿨다운 -40%",       "cooldownMultiplier":0.6 },
+      { "id":"hp1",    "label":"◉ 생명력 증폭","desc":"최대 체력 +40",     "maxHpBonus":40 },
+      { "id":"hp2",    "label":"◉ 철갑",       "desc":"최대 체력 +80",     "maxHpBonus":80 }
+    ],
+    "passives": [
+      { "id":"dualCast",    "label":"✦ 이중 시전",  "desc":"원형 진 → 2발 동시 발사",    "dualCast":true,      "minLevel":3 },
+      { "id":"tripleNova",  "label":"✦ 폭발 확장",  "desc":"별 진 → 투사체 +4발",        "novaBonusCount":4,   "minLevel":4 },
+      { "id":"chainBoost",  "label":"✦ 연쇄 강화",  "desc":"번개 진 → 연쇄 횟수 +2",     "chainBonus":2,       "minLevel":4 },
+      { "id":"pierceBoost", "label":"✦ 관통 강화",  "desc":"삼각형 진 → 2회 추가 관통",   "pierceBonus":2,      "minLevel":3 },
+      { "id":"pulseRange",  "label":"✦ 충격파 확대","desc":"사각형 진 → 범위 +60px",      "pulseRangeBonus":60, "minLevel":4 },
+      { "id":"allBoost",    "label":"✦ 승천",       "desc":"모든 능력치 +30%",            "allMultiplier":1.3,  "minLevel":8 }
+    ]
+  },
+  "_drawingNote": "도형 인식 관대 임계값",
+  "drawing": {
+    "minPoints": 10,
+    "minRadius": 20,
+    "maxCoefficientOfVariation": 0.42,
+    "minAngularSweep": 4.5,
+    "triangleAngleThresh": 65,
+    "squareAngleThresh": 60,
+    "zigzagMinReversal": 4,
+    "zigzagDirectionThresh": 30,
+    "starMinPeaks": 4,
+    "cornerSmoothRadius": 8,
+    "_confidenceTiersSchema": "각 원소: min(number, inclusive), max(number, exclusive), damageMult(number, 0=차단), label(string) — 정렬: min 오름차순, 구간 연속 필수",
+    "minPassThreshold": 0.40,
+    "_minPassThresholdNote": "첫 번째 damageMult>0 tier의 min — 이 값 이상 confidence만 주문 시전 가능 (클라이언트 하드코딩 0.65 완전 대체)",
+    "confidenceTiers": [
+      { "min": 0.0,  "max": 0.40, "damageMult": 0.0,  "label": "실패" },
+      { "min": 0.40, "max": 0.65, "damageMult": 0.7,  "label": "약화" },
+      { "min": 0.65, "max": 0.80, "damageMult": 1.0,  "label": "정상" },
+      { "min": 0.80, "max": 1.01, "damageMult": 1.3,  "label": "완벽" }
+    ],
+    "circuitBreaker": {
+      "maxErrors": 5,
+      "_maxErrorsNote": "windowMs 내 이 횟수 이상 오류 → CB 트립 (assumption: playtesting 기반 조정 예정)",
+      "windowMs": 5000,
+      "latencyMs": 100,
+      "_latencyNote": "ML 추론 100ms SLA — 초과 시 오류로 집계 후 즉시 fallback",
+      "resetMs": 30000,
+      "_resetNote": "트립 후 30초 경과 시 자동 해제 (half-open reset)"
+    }
+  },
+  "wave": {
+    "baseEnemyCount": 4,
+    "enemyCountGrowth": 1.4,
+    "baseEnemyHp": 45,
+    "hpGrowthPerWave": 1.22,
+    "baseDamage": 10,
+    "damageGrowthPerWave": 1.12,
+    "baseSpeed": 68,
+    "speedGrowthPerWave": 1.05,
+    "spawnIntervalMs": 900,
+    "expPerEnemy": 18,
+    "expBossMultiplier": 6
+  },
+  "enemies": {
+    "basic":  { "label":"슬라임",    "hpMult":1.0,  "speedMult":1.0,  "damageMult":1.0, "attackRange":42,  "attackCooldownTicks":32, "element":null,    "expMult":1.0,  "radius":20, "score":10,  "melee":true  },
+    "fast":   { "label":"섬광충",    "hpMult":0.55, "speedMult":2.1,  "damageMult":0.75,"attackRange":38,  "attackCooldownTicks":20, "element":null,    "expMult":1.3,  "radius":14, "score":15,  "melee":true  },
+    "tank":   { "label":"강철 골렘", "hpMult":2.8,  "speedMult":0.45, "damageMult":1.8, "attackRange":55,  "attackCooldownTicks":50, "element":"earth", "expMult":2.2,  "radius":30, "score":25,  "melee":true  },
+    "ranged": { "label":"마법사",    "hpMult":0.75, "speedMult":0.6,  "damageMult":1.3, "attackRange":220, "attackCooldownTicks":40, "element":null,    "expMult":1.6,  "radius":17, "score":20,  "melee":false, "projectileSpeed":12 },
+    "shield": { "label":"방패 기사", "hpMult":1.8,  "speedMult":0.7,  "damageMult":1.2, "attackRange":50,  "attackCooldownTicks":40, "element":"earth", "expMult":1.8,  "radius":24, "score":22,  "melee":true,
+               "shieldDefenseTrigger":3, "_defTriggerNote":"공격 N회 후 방어 패턴 진입 (핫리로드 반영)",
+               "shieldDefenseTicks":40,  "_defTicksNote":"방어 패턴 지속 틱수(×tickMs ms)",
+               "shieldDamageReduction":0.5, "_defReductionNote":"방어 패턴 중 피해 감소율 (0.5=50% 감소)" },
+    "healer": { "label":"치유사",    "hpMult":0.65, "speedMult":0.8,  "damageMult":0.6, "attackRange":180, "attackCooldownTicks":60, "element":"water", "expMult":2.0,  "radius":16, "score":30,  "melee":false, "healRadius":120, "healAmount":8 },
+    "boss":   { "label":"마계 군주", "hpMult":12.0, "speedMult":0.75, "damageMult":3.0, "attackRange":90,  "attackCooldownTicks":35, "element":null,    "expMult":12.0, "radius":52, "score":200, "melee":true  }
+  },
+  "waveComposition": {
+    "1":  ["basic","basic","basic","basic"],
+    "2":  ["basic","basic","basic","fast","fast"],
+    "3":  ["basic","basic","fast","fast","tank"],
+    "4":  ["basic","fast","fast","tank","ranged"],
+    "5":  ["boss","basic","basic","fast","fast"],
+    "6":  ["basic","fast","fast","tank","ranged","ranged"],
+    "7":  ["basic","fast","tank","tank","ranged","shield"],
+    "8":  ["fast","fast","tank","ranged","ranged","shield","healer"],
+    "9":  ["tank","tank","ranged","ranged","fast","fast","healer","shield"],
+    "10": ["boss","tank","tank","ranged","fast","fast","healer","shield"]
+  },
+  "bossElements": ["fire","water","lightning","earth","fire","water","lightning","earth"],
+  "dda": {
+    "_comment": "동적 난이도 조정(DDA) — 파동당 플레이어 성과 기반 적 수·HP 자동 보정 (±20%)",
+    "enabled": true,
+    "damageTakenRateTarget": 0.35,
+    "_dmgRateNote": "플레이어 HP풀 대비 파동당 수신 피해 목표 비율 (0.35 = 35%). 이 미만이면 난이도 상향, 초과하면 하향",
+    "adjustStep": 0.10,
+    "_stepNote": "파동당 ddaScale 변화 폭 (±10%). 1파동에 최대 ±10% 이동",
+    "maxScaleUp": 1.20,
+    "maxScaleDown": 0.80
+  },
+  "patternCounter": {
+    "_comment": "패턴 카운터링 — 세션 내 가장 많이 쓴 원소에 내성 적 점진적 증가",
+    "enabled": true,
+    "thresholdCasts": 5,
+    "_thresholdNote": "최소 N회 시전 후 카운터링 적용 (5회 미만이면 무시)",
+    "maxResistFraction": 0.40,
+    "_maxFractionNote": "스폰 큐 중 최대 40%까지 내성 원소 오버라이드",
+    "counterElement": {
+      "_note": "플레이어가 key 원소 많이 쓰면 value 원소 적 증가 (key 공격이 value 적에게 0.7× 적용 — 상성 불리)",
+      "fire": "water",
+      "water": "lightning",
+      "lightning": "earth",
+      "earth": "fire"
+    },
+    "resistantEnemyTypes": ["basic", "fast", "tank", "ranged"]
+  },
+  "coSynergy": {
+    "_comment": "2P 협동 시너지 — 상호보완 원소 연속 시전 시 co_synergy_burst 발동 (서버 권위 판정)",
+    "enabled": true,
+    "windowMs": 3000,
+    "_windowNote": "첫 번째 시전 후 이 시간(ms) 이내 두 번째 시전이 오면 시너지 발동",
+    "comboPairs": [
+      ["fire","water"],["water","fire"],
+      ["lightning","earth"],["earth","lightning"]
+    ],
+    "_pairsNote": "[elem1, elem2] — elem1 시전 후 windowMs 이내 elem2 시전 시 발동 (양방향 각각 등록)",
+    "burstDmg": 60,
+    "_dmgNote": "시너지 버스트 기본 데미지 (속성 상성 적용 후 각 적에게 전달)",
+    "burstRadius": 200,
+    "_radiusNote": "시전자 위치 기준 반경(px) 내 적 전체 타격",
+    "cooldownMs": 8000,
+    "_cooldownNote": "시너지 이벤트 최소 간격(ms) — 연속 발동 방지"
+  }
+}

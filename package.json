@@ -1,0 +1,12 @@
+{
+  "name": "wave-defense",
+  "version": "1.0.0",
+  "description": "2-player cooperative infinite wave defense game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

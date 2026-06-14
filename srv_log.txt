@@ -1,0 +1,57 @@
+
+🎮 Wave Defense Server  http://localhost:3000
+   Balance: /home/user/organt_workspace/p-010-2인-협동-성장형-무한-웨이브-디펜스/config/balance.json
+   Tick: 50ms (20Hz)
+   MaxPlayers: 4  ReviveHP: 30%
+   InitialShapes: circle, triangle, star
+   Windup: 4 ticks (200ms)
+
+[room] created 6U9G by p1
+[room] p3 joined 6U9G (2/4)
+[room] 6U9G removed (empty)
+[room] created 2PRB by p4
+[ml] FastAPI error: fetch failed — local heuristic fallback
+[ml] FastAPI error: fetch failed — local heuristic fallback
+[ml] FastAPI error: fetch failed — local heuristic fallback
+[ml] FastAPI error: fetch failed — local heuristic fallback
+[CB] TRIPPED — 5 errors in 5000ms
+[ml] FastAPI error: fetch failed — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[solo_combo_hit] p4 → e22  combo_bonus:+7  dmg 20→27  (×1.35)
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[solo_combo_hit] p4 → e31  combo_bonus:+7  dmg 20→27  (×1.35)
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[solo_combo_hit] p4 → e41  combo_bonus:+7  dmg 20→27  (×1.35)
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[ml] CB tripped — local heuristic fallback
+[solo_combo_hit] p4 → e32  combo_bonus:+7  dmg 20→27  (×1.35)
